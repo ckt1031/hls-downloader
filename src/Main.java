@@ -81,7 +81,7 @@ public class Main {
 
             URL url = new URI(urlString).toURL();
             String path = url.getPath();
-            String hash = getSHA256(path);
+            String hash = getMD5(path);
             String fileNameParsed = filename.isEmpty() || !filename.endsWith(".mp3") ? hash + ".mp3" : filename;
 
             downloadTsFiles(hash, urlString, tsFiles);
@@ -220,17 +220,16 @@ public class Main {
         return target;
     }
 
-    private static String getSHA256(String str) {
+    private static String getMD5(String str) {
         try {
-            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
-            byte[] array = md.digest(str.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            StringBuilder sb = new StringBuilder();
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("MD5");
+            byte[] array = md.digest(str.getBytes());
+            StringBuffer sb = new StringBuffer();
             for (byte b : array) {
-                sb.append(String.format("%02x", b));
+                sb.append(Integer.toHexString((b & 0xFF) | 0x100).substring(1, 3));
             }
             return sb.toString();
         } catch (java.security.NoSuchAlgorithmException e) {
-            e.printStackTrace();
         }
         return null;
     }
