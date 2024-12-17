@@ -1,0 +1,6 @@
+videos.txt
+/dist
+/temp
+*.class
+/build
+.DS_Store
