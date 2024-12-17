@@ -28,11 +28,20 @@ public class Main {
         return null;
     }
 
+    private static Boolean hasArgument(String[] args, String flag) {
+        for (String arg : args) {
+            if (arg.equals(flag)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static void main(String[] args) throws IOException {
         List<String> urls = new ArrayList<>();
         String urlsFile = parseArgument(args, "-t");
         String outputFile = parseArgument(args, "-o");
-        CLEAN = parseArgument(args, "--clean") != null;
+        CLEAN = hasArgument(args, "--clean");
 
         for (String arg : args) {
             if (!arg.startsWith("-") && !arg.equals(urlsFile) && !arg.equals(outputFile)) {
@@ -44,7 +53,11 @@ public class Main {
             try (BufferedReader reader = new BufferedReader(new FileReader(urlsFile))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    // urls.add(line.trim());
+                    // Ignore if # or empty
+                    if (line.startsWith("#") || line.isEmpty()) {
+                        continue;
+                    }
+
                     if (line.contains(":")) {
                         String[] parts = line.split(":", 2);
                         urls.add(String.format("%s:%s", parts[0], parts[1].trim()));
@@ -69,6 +82,12 @@ public class Main {
             // System.out.println(url);
             String[] parts = url.split(":", 2);
             String filename = parts[0] == null ? "" : parts[0];
+
+            // Check if file exists in system
+            if (Files.exists(Paths.get(DEFAULT_OUTPUT_DIR, filename))) {
+                System.out.println("File already exists: " + filename);
+                continue;
+            }
 
             // System.out.println("Downloading " + parts[1] + " to " + filename);
             download(filename, parts[1]);
@@ -101,6 +120,8 @@ public class Main {
 
         String lastPath = getLastPath(playlistURL);
 
+        System.out.println("Downloading " + tsFiles.size() + " files...");
+
         Integer threads = 25;
         ExecutorService executor = Executors.newFixedThreadPool(threads); // Adjust the number of threads as needed
 
@@ -124,6 +145,8 @@ public class Main {
                     InputStream in = conn.getInputStream();
                     Files.copy(in, Paths.get(DEFAULT_TEMP_DIR, idenifier, fileName));
                     in.close();
+
+                    System.out.println("Downloaded: " + fileName);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
