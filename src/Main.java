@@ -82,7 +82,7 @@ public class Main {
             URL url = new URI(urlString).toURL();
             String path = url.getPath();
             String hash = getSHA256(path);
-            String fileNameParsed = filename.isEmpty() && filename.endsWith(".mp3") ? hash + ".mp3" : filename;
+            String fileNameParsed = filename.isEmpty() || !filename.endsWith(".mp3") ? hash + ".mp3" : filename;
 
             downloadTsFiles(hash, urlString, tsFiles);
             mergeFilesToMP3(hash, fileNameParsed, tsFiles);
