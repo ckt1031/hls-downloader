@@ -39,7 +39,7 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
         List<String> urls = new ArrayList<>();
-        String urlsFile = parseArgument(args, "-t");
+        String urlsFile = parseArgument(args, "-i");
         String outputFile = parseArgument(args, "-o");
         CLEAN = hasArgument(args, "--clean");
 
