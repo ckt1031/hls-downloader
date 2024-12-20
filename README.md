@@ -6,11 +6,11 @@ Written in Java to be cross-platform, it uses the FFmpeg library to merge the st
 
 ## Usage (Build from source)
 
-> Please make sure you have Java 18 (or later) and FFmpeg installed on your system.
+> Please make sure you have Java 18 (or later), Kotlin and `ffmpeg` installed on your system.
 
 ```bash
-./build.sh
-java -jar build/downloader.jar <url> <output>
+kotlinc src/Main.kt -include-runtime -d downloader.jar
+java -jar downloader.jar <url> <output>
 ```
 
 ### Massively Parallel Download
@@ -18,7 +18,7 @@ java -jar build/downloader.jar <url> <output>
 You can also download multiple streams in parallel by providing a file with the URLs.
 
 ```bash
-java -jar build/downloader.jar -i video.txt
+java -jar downloader.jar -i video.txt
 ```
 
 ### Arguments
