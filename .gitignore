@@ -4,3 +4,5 @@ videos.txt
 *.class
 .DS_Store
 downloader.jar
+out
+.idea

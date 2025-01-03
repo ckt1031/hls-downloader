@@ -11,6 +11,9 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.security.MessageDigest
 
+/**
+ * HLS Downloader
+ */
 object Main {
     private const val DEFAULT_OUTPUT_DIR = "dist"
     private const val DEFAULT_TEMP_DIR = "temp"
@@ -27,14 +30,13 @@ object Main {
         return null
     }
 
-//    private fun hasArgument(args: Array<String>, flag: String): Boolean {
-//        return args.contains(flag)
-//    }
-
     private fun hasCleanArgument(args: Array<String>): Boolean {
         return args.contains("--clean")
     }
 
+    /**
+     * Main method
+     */
     @JvmStatic
     fun main(args: Array<String>) {
         val urls = ArrayList<String>()
@@ -52,30 +54,30 @@ object Main {
         if (urlsFile != null) {
             // Check if file exists
             if (!Files.exists(Paths.get(urlsFile))) {
-                println("File not found: $urlsFile")
-                return
+                // Raise an error if the file does not exist
+                throw FileNotFoundException("File not found: $urlsFile")
             }
 
             BufferedReader(FileReader(urlsFile)).use { reader ->
-                var line: String?
+                var line: String
                 while (reader.readLine().also { line = it } != null) {
                     // Ignore if # or empty
-                    if (line!!.startsWith("#") || line!!.isEmpty()) {
+                    if (line.isEmpty() || line.startsWith("#")) {
                         continue
                     }
-                    if (line!!.contains(":")) {
-                        val parts = line!!.split(":", limit = 2)
+
+                    if (line.contains(":")) {
+                        val parts = line.split(":", limit = 2)
                         urls.add(String.format("%s:%s", parts[0], parts[1].trim()))
                     } else {
-                        urls.add(line!!.trim())
+                        urls.add(line.trim())
                     }
                 }
             }
         }
 
         if (urls.isEmpty()) {
-            println("Usage: java HLSDownloader [-t urls_file] <m3u8_url>...")
-            return
+            throw IllegalArgumentException("No URLs provided")
         }
 
         // Ensure dist folder exists:
@@ -84,7 +86,6 @@ object Main {
         Files.createDirectories(Paths.get(DEFAULT_TEMP_DIR))
 
         for (url in urls) {
-            // System.out.println(url);
             val parts = url.split(":", limit = 2)
             val filename = parts[0].takeIf { it.isNotEmpty() } ?: ""
 
@@ -183,7 +184,7 @@ object Main {
             files.add(Paths.get(DEFAULT_TEMP_DIR, identifier, tsFileName).toString())
         }
 
-        // FFmpeg command to merge the .ts files into a .mp3 with compression
+        // ffmpeg command to merge the .ts files into a .mp3 with compression
         val pb = ProcessBuilder(
             "ffmpeg",
             "-i",
@@ -208,14 +209,20 @@ object Main {
         p.waitFor()
     }
 
-    @Throws(Exception::class)
-    private fun fetchM3U8(urlString: String): List<String> {
+    private fun getUrlInput(urlString: String): BufferedReader {
         val url = URI(urlString).toURL()
 
         val conn = url.openConnection() as HttpURLConnection
         conn.requestMethod = "GET"
 
         val input = BufferedReader(InputStreamReader(conn.inputStream))
+
+        return input
+    }
+
+    @Throws(Exception::class)
+    private fun fetchM3U8(urlString: String): List<String> {
+        val input = getUrlInput(urlString)
         var inputLine: String?
         val chunkList = ArrayList<String>()
         while (input.readLine().also { inputLine = it } != null) {
@@ -225,12 +232,12 @@ object Main {
         }
         input.close()
 
-        val last_path = getLastPath(urlString)
+        val lastPath = getLastPath(urlString)
 
         val tsFiles = ArrayList<String>()
 
         for (chunk in chunkList) {
-            val newURL = urlString.replace(last_path, chunk)
+            val newURL = urlString.replace(lastPath, chunk)
             val list = fetchTsFilesList(newURL)
             tsFiles.addAll(list)
         }
@@ -240,13 +247,7 @@ object Main {
 
     @Throws(Exception::class)
     private fun fetchTsFilesList(chunkListURL: String): List<String> {
-        // Fetch the .ts files list
-        val url = URI(chunkListURL).toURL()
-
-        val conn = url.openConnection() as HttpURLConnection
-        conn.requestMethod = "GET"
-
-        val input = BufferedReader(InputStreamReader(conn.inputStream))
+        val input = getUrlInput(chunkListURL)
         var inputLine: String?
         val tsFiles = ArrayList<String>()
         while (input.readLine().also { inputLine = it } != null) {
